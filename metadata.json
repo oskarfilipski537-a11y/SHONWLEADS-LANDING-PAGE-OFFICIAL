@@ -1,0 +1,7 @@
+{
+  "name": "ShownLeads - Pay-Per-Shown-Estimate Funnel",
+  "description": "High-converting, mobile-first multi-step landing page funnel for home service and contracting companies.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
