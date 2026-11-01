@@ -6,6 +6,7 @@ import { WEBHOOK_URL } from '../config.ts';
 import { formatPhoneNumber, isValidUSPhone, isValidEmail, splitFullName } from '../utils/formatters.ts';
 import { getPersistedUtmParams, getMetaTrackingData } from '../utils/utm.ts';
 import { trackEvent } from '../utils/analytics.ts';
+import { REVENUE_OPTIONS, isLowestRevenueOption } from '../utils/qualification.ts';
 
 const STORAGE_QUIZ_KEY = 'shownleads_quiz_data';
 const STORAGE_STEP_KEY = 'shownleads_quiz_step';
@@ -31,13 +32,6 @@ const ESTIMATE_OPTIONS = [
   { id: '6_10', label: '6-10 estimates', desc: 'Ideal for 1-2 dedicated sales estimators' },
   { id: '11_20', label: '11-20 estimates', desc: 'Aggressive growth across multiple zip codes' },
   { id: '20_plus', label: '20+ estimates', desc: 'Maximum regional territory expansion' },
-];
-
-const REVENUE_OPTIONS = [
-  { id: '10k', label: '$10k/month', desc: 'Consistent baseline revenue' },
-  { id: '20k_30k', label: '$20k-$30k/month', desc: 'Steady monthly job volume' },
-  { id: '30k_50k', label: '$30k-$50k/month', desc: 'Solid local market traction' },
-  { id: '50k_100k', label: '$50k-$100k/month', desc: 'High-volume contractor' },
 ];
 
 export const QuizFunnel: React.FC<QuizFunnelProps> = ({
@@ -148,7 +142,11 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
   }, [isLockedIn, currentStep, setCurrentStep]);
 
   // Advance to next step with snappy, responsive transition
-  const handleSelectOption = (field: 'crews' | 'extraEstimates' | 'monthlyRevenue', value: string) => {
+  const handleSelectOption = (
+    field: 'crews' | 'extraEstimates' | 'monthlyRevenue',
+    value: string,
+    index?: number
+  ) => {
     // Fire Meta Pixel ViewContent event when first quiz question is answered
     if (currentStep === 1 || field === 'crews') {
       if (!viewContentFiredRef.current) {
@@ -163,7 +161,11 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
     }
 
     // Immediate state update for zero click lag
-    setAnswers((prev) => ({ ...prev, [field]: value }));
+    setAnswers((prev) => ({
+      ...prev,
+      [field]: value,
+      ...(field === 'monthlyRevenue' && typeof index === 'number' ? { monthlyRevenueIndex: index } : {}),
+    }));
 
     // If this is step 1, trigger lock-in smoothly
     if (!isLockedIn) {
@@ -278,7 +280,11 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
 
     const { firstName, lastName } = splitFullName(finalAnswers.fullName);
 
-    // Exact keys requested: first_name, last_name, email, phone, crews, monthly_revenue, extra_estimates, consent, fbp, fbc, fbclid
+    // Position-based check: First (lowest) option in the list is NOT qualified whatever its text
+    const isLowestOption = isLowestRevenueOption(finalAnswers.monthlyRevenueIndex, finalAnswers.monthlyRevenue);
+    const qualifiedStatus = isLowestOption ? 'no' : 'yes';
+
+    // Exact keys requested: first_name, last_name, email, phone, crews, monthly_revenue, extra_estimates, consent, qualified, fbp, fbc, fbclid
     const payload = {
       first_name: firstName,
       last_name: lastName,
@@ -288,6 +294,7 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
       monthly_revenue: finalAnswers.monthlyRevenue,
       extra_estimates: finalAnswers.extraEstimates,
       consent: Boolean(finalAnswers.consent),
+      qualified: qualifiedStatus,
       fbp: metaData.fbp || utmParams.fbp || '',
       fbc: metaData.fbc || utmParams.fbc || '',
       fbclid: metaData.fbclid || utmParams.fbclid || '',
@@ -296,16 +303,14 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
     // Save in session storage
     try {
       sessionStorage.setItem('shownleads_final_lead', JSON.stringify(payload));
+      sessionStorage.setItem('shownleads_qualified', qualifiedStatus);
+      if (typeof finalAnswers.monthlyRevenueIndex === 'number') {
+        sessionStorage.setItem('shownleads_revenue_index', finalAnswers.monthlyRevenueIndex.toString());
+      }
     } catch {}
 
-    // Fire fbq('track', 'Lead') once, but do NOT fire if monthly revenue is "$10k - $25k" (or $10k bracket)
-    const revenueTrimmed = (finalAnswers.monthlyRevenue || '').trim();
-    const isExcludedRevenue =
-      revenueTrimmed === '$10k - $25k' ||
-      revenueTrimmed === '$10k/month' ||
-      revenueTrimmed.toLowerCase().startsWith('$10k');
-
-    if (!leadFiredRef.current && !isExcludedRevenue) {
+    // Fire fbq('track', 'Lead') once ONLY if qualified is "yes" (do NOT fire if qualified is "no")
+    if (qualifiedStatus === 'yes' && !leadFiredRef.current) {
       leadFiredRef.current = true;
       if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
         try {
@@ -569,13 +574,16 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
                 </p>
 
                 <div className="flex flex-col gap-2.5">
-                  {REVENUE_OPTIONS.map((opt) => {
-                    const isSelected = answers.monthlyRevenue === opt.label;
+                  {REVENUE_OPTIONS.map((opt, index) => {
+                    const isSelected =
+                      answers.monthlyRevenueIndex !== undefined
+                        ? answers.monthlyRevenueIndex === index
+                        : answers.monthlyRevenue === opt.label;
                     return (
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() => handleSelectOption('monthlyRevenue', opt.label)}
+                        onClick={() => handleSelectOption('monthlyRevenue', opt.label, index)}
                         className={`group relative text-left px-5 py-3 rounded-xl border transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 active:scale-[0.99] cursor-pointer ${
                           isSelected
                             ? 'bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-amber-600/20 border-amber-400 shadow-[0_0_24px_rgba(251,191,36,0.3)]'
@@ -632,11 +640,13 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
 
                     <h4 className="text-xl font-bold text-white mb-2">
                       {loadingPhase === 'validating' && 'Verifying your contractor qualifications...'}
-                      {loadingPhase === 'checking_capacity' && 'Checking homeowner demand in your area...'}
-                      {loadingPhase === 'qualifying' && 'Territory open! Preparing your booking calendar...'}
+                      {loadingPhase === 'checking_capacity' && (isLowestRevenueOption(answers.monthlyRevenueIndex, answers.monthlyRevenue) ? 'Reviewing contractor capacity criteria...' : 'Checking homeowner demand in your area...')}
+                      {loadingPhase === 'qualifying' && (isLowestRevenueOption(answers.monthlyRevenueIndex, answers.monthlyRevenue) ? 'Finalizing qualification status...' : 'Territory open! Preparing your booking calendar...')}
                     </h4>
                     <p className="text-xs sm:text-sm text-neutral-400 max-w-sm">
-                      Matching your crew capacity with pre-screened local homeowners.
+                      {isLowestRevenueOption(answers.monthlyRevenueIndex, answers.monthlyRevenue)
+                        ? 'Analyzing service criteria for your business.'
+                        : 'Matching your crew capacity with pre-screened local homeowners.'}
                     </p>
                   </div>
                 ) : (

@@ -2,6 +2,7 @@ export interface QuizAnswers {
   crews: string;
   extraEstimates: string;
   monthlyRevenue: string;
+  monthlyRevenueIndex?: number;
   fullName: string;
   email: string;
   phone: string;

@@ -12,9 +12,11 @@ import { ScreenshotGallery } from './components/ScreenshotGallery.tsx';
 import { Footer } from './components/Footer.tsx';
 import { BookingPage } from './components/BookingPage.tsx';
 import { ThankYouPage } from './components/ThankYouPage.tsx';
+import { UnqualifiedPage } from './components/UnqualifiedPage.tsx';
 import { QuizAnswers } from './types.ts';
 import { captureUtmParams } from './utils/utm.ts';
 import { initMetaPixel, trackEvent } from './utils/analytics.ts';
+import { isLowestRevenueOption } from './utils/qualification.ts';
 
 const STORAGE_STEP_KEY = 'shownleads_quiz_step';
 const STORAGE_LOCKED_KEY = 'shownleads_is_locked_in';
@@ -81,6 +83,8 @@ export default function App() {
       const stored = sessionStorage.getItem('shownleads_final_lead');
       if (stored) {
         const parsed = JSON.parse(stored);
+        const storedIndex = sessionStorage.getItem('shownleads_revenue_index');
+        const parsedIndex = storedIndex !== null ? parseInt(storedIndex, 10) : undefined;
         return {
           fullName: parsed.full_name || '',
           email: parsed.email || '',
@@ -88,6 +92,7 @@ export default function App() {
           crews: parsed.crews || '',
           extraEstimates: parsed.extra_estimates || '',
           monthlyRevenue: parsed.monthly_revenue || '',
+          monthlyRevenueIndex: !isNaN(parsedIndex as number) ? parsedIndex : undefined,
           consent: true,
           consentTimestamp: parsed.consent_timestamp || '',
         };
@@ -96,15 +101,22 @@ export default function App() {
     return null;
   });
 
-  // When step 4 is completed, navigate to #book
+  // When step 4 is completed, route based on qualification
   const handleQuizComplete = (answers: QuizAnswers) => {
     setCompletedLead(answers);
     document.body.style.overflow = 'auto';
     document.body.style.overflowY = 'auto';
     document.documentElement.style.overflow = 'auto';
     document.documentElement.style.overflowY = 'auto';
-    window.location.hash = '#book';
-    setCurrentHash('#book');
+
+    const isUnqualified = isLowestRevenueOption(answers.monthlyRevenueIndex, answers.monthlyRevenue);
+    if (isUnqualified) {
+      window.location.hash = '#not-fit';
+      setCurrentHash('#not-fit');
+    } else {
+      window.location.hash = '#book';
+      setCurrentHash('#book');
+    }
     window.scrollTo(0, 0);
   };
 
@@ -140,6 +152,8 @@ export default function App() {
       sessionStorage.setItem(STORAGE_STEP_KEY, '1');
       sessionStorage.removeItem('shownleads_quiz_data');
       sessionStorage.removeItem('shownleads_final_lead');
+      sessionStorage.removeItem('shownleads_qualified');
+      sessionStorage.removeItem('shownleads_revenue_index');
     } catch {}
     document.body.style.overflow = 'auto';
     document.body.style.overflowY = 'auto';
@@ -149,6 +163,25 @@ export default function App() {
     setCurrentHash('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Check whether current user is disqualified based on first (lowest) monthly revenue option position
+  const isDisqualified = (() => {
+    try {
+      if (sessionStorage.getItem('shownleads_qualified') === 'no') return true;
+    } catch {}
+    if (completedLead && isLowestRevenueOption(completedLead.monthlyRevenueIndex, completedLead.monthlyRevenue)) return true;
+    return false;
+  })();
+
+  // Render Disqualified Screen (#not-fit or if disqualified user attempts to access booking or thank-you page)
+  if (currentHash === '#not-fit' || (isDisqualified && (currentHash === '#book' || currentHash === '#thank-you'))) {
+    return (
+      <div className="relative min-h-screen bg-black text-neutral-100 font-sans overflow-y-auto">
+        <BackgroundGlow />
+        <UnqualifiedPage />
+      </div>
+    );
+  }
 
   // Render Page 3: Thank You Page (#thank-you)
   if (currentHash === '#thank-you' || currentHash.startsWith('#thank-you')) {
