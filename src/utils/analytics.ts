@@ -52,20 +52,25 @@ export function initMetaPixel(): void {
 
 /**
  * Track Meta Pixel conversion events from the browser.
- * NOTE: As per strict business requirements, Lead and Schedule events
- * MUST NOT be fired from the browser (they are dispatched server-side).
+ * Only PageView, ViewContent, and Lead are permitted.
+ * All other events (e.g. Schedule) are strictly disallowed.
  */
 export function trackEvent(eventName: string, payload?: Record<string, any>): void {
   if (typeof window === 'undefined') return;
 
-  // Strict check: Prevent browser dispatch of Lead or Schedule events
-  if (eventName === 'Lead' || eventName === 'Schedule') {
+  // Strict check: Only PageView, ViewContent, and Lead are permitted
+  const allowedEvents = ['PageView', 'ViewContent', 'Lead'];
+  if (!allowedEvents.includes(eventName)) {
     return;
   }
 
   if (window.fbq) {
     try {
-      window.fbq('track', eventName, payload || {});
+      if (payload && Object.keys(payload).length > 0) {
+        window.fbq('track', eventName, payload);
+      } else {
+        window.fbq('track', eventName);
+      }
     } catch (e) {
       console.warn('Error firing pixel event:', e);
     }

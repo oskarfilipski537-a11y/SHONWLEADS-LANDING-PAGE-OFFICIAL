@@ -81,6 +81,7 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState<'validating' | 'checking_capacity' | 'qualifying' | ''>('');
   const viewContentFiredRef = useRef(false);
+  const leadFiredRef = useRef(false);
 
   // Persist answers
   useEffect(() => {
@@ -296,6 +297,24 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
     try {
       sessionStorage.setItem('shownleads_final_lead', JSON.stringify(payload));
     } catch {}
+
+    // Fire fbq('track', 'Lead') once, but do NOT fire if monthly revenue is "$10k - $25k" (or $10k bracket)
+    const revenueTrimmed = (finalAnswers.monthlyRevenue || '').trim();
+    const isExcludedRevenue =
+      revenueTrimmed === '$10k - $25k' ||
+      revenueTrimmed === '$10k/month' ||
+      revenueTrimmed.toLowerCase().startsWith('$10k');
+
+    if (!leadFiredRef.current && !isExcludedRevenue) {
+      leadFiredRef.current = true;
+      if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
+        try {
+          window.fbq('track', 'Lead');
+        } catch (e) {
+          console.warn('Notice firing Lead pixel event:', e);
+        }
+      }
+    }
 
     // POST to webhook in background with retry, but NEVER block the user
     const postWebhook = async () => {
