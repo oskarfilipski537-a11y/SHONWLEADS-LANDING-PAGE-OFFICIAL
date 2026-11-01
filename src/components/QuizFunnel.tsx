@@ -34,10 +34,10 @@ const ESTIMATE_OPTIONS = [
 ];
 
 const REVENUE_OPTIONS = [
-  { id: '10k_25k', label: '$10k - $25k', desc: 'Consistent baseline revenue' },
-  { id: '25k_50k', label: '$25k - $50k', desc: 'Steady monthly job volume' },
-  { id: '50k_75k', label: '$50k - $75k', desc: 'Solid local market traction' },
-  { id: '75k_100k', label: '$75k - $100k', desc: 'High-volume contractor ($100k max)' },
+  { id: '10k', label: '$10k/month', desc: 'Consistent baseline revenue' },
+  { id: '20k_30k', label: '$20k-$30k/month', desc: 'Steady monthly job volume' },
+  { id: '30k_50k', label: '$30k-$50k/month', desc: 'Solid local market traction' },
+  { id: '50k_100k', label: '$50k-$100k/month', desc: 'High-volume contractor' },
 ];
 
 export const QuizFunnel: React.FC<QuizFunnelProps> = ({
