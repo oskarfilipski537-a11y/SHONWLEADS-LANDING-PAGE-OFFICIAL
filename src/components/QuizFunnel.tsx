@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, Check, ShieldCheck, Calendar, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { QuizAnswers } from '../types.ts';
 import { WEBHOOK_URL } from '../config.ts';
-import { formatPhoneNumber, isValidUSPhone, isValidEmail } from '../utils/formatters.ts';
+import { formatPhoneNumber, isValidUSPhone, isValidEmail, splitFullName } from '../utils/formatters.ts';
 import { getPersistedUtmParams, getMetaTrackingData } from '../utils/utm.ts';
 import { trackEvent } from '../utils/analytics.ts';
 
@@ -276,26 +276,21 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
       consentTimestamp: new Date().toISOString(),
     };
 
+    const { firstName, lastName } = splitFullName(finalAnswers.fullName);
+
+    // Exact keys requested: first_name, last_name, email, phone, crews, monthly_revenue, extra_estimates, consent, fbp, fbc, fbclid
     const payload = {
+      first_name: firstName,
+      last_name: lastName,
+      email: finalAnswers.email.trim(),
+      phone: finalAnswers.phone.trim(),
       crews: finalAnswers.crews,
-      extra_estimates: finalAnswers.extraEstimates,
       monthly_revenue: finalAnswers.monthlyRevenue,
-      full_name: finalAnswers.fullName,
-      email: finalAnswers.email,
-      phone: finalAnswers.phone,
-      consent: true,
-      consent_timestamp: finalAnswers.consentTimestamp,
-      page_url: window.location.href,
-      submitted_at: new Date().toISOString(),
-      utm_source: utmParams.utm_source || '',
-      utm_medium: utmParams.utm_medium || '',
-      utm_campaign: utmParams.utm_campaign || '',
-      utm_term: utmParams.utm_term || '',
-      utm_content: utmParams.utm_content || '',
-      referrer: utmParams.referrer || document.referrer || '',
-      fbclid: metaData.fbclid || utmParams.fbclid || '',
+      extra_estimates: finalAnswers.extraEstimates,
+      consent: Boolean(finalAnswers.consent),
       fbp: metaData.fbp || utmParams.fbp || '',
       fbc: metaData.fbc || utmParams.fbc || '',
+      fbclid: metaData.fbclid || utmParams.fbclid || '',
     };
 
     // Save in session storage
@@ -320,6 +315,7 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
               Accept: 'application/json',
             },
             body: JSON.stringify(payload),
+            keepalive: true,
             signal: controller.signal,
           });
           clearTimeout(timeoutId);

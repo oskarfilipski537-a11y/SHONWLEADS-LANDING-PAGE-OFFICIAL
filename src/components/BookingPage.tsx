@@ -32,7 +32,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ onBookingConfirmed, le
       if (stored) {
         const parsed = JSON.parse(stored);
         return {
-          fullName: parsed.full_name || '',
+          fullName: parsed.full_name || [parsed.first_name, parsed.last_name].filter(Boolean).join(' '),
           email: parsed.email || '',
           phone: parsed.phone || '',
           crews: parsed.crews || '',

@@ -10,8 +10,8 @@
 export const LOGO_URL: string = "https://res.cloudinary.com/diwxs2xe8/image/upload/v1793316470/ShownLeads_Gold_Growth_Logo_dkm4kq.png"; 
 
 // 2. GO HIGH LEVEL (GHL) WEBHOOK URL
-// When the contractor completes Step 4 of the quiz, all lead details + UTM params are POSTed here.
-export const WEBHOOK_URL: string = "PASTE_GHL_WEBHOOK_URL_HERE";
+// When the contractor completes Step 4 of the quiz, all lead details are POSTed here.
+export const WEBHOOK_URL: string = "https://services.leadconnectorhq.com/hooks/VjCC5apJM333FKlM70gi/webhook-trigger/79ad121d-929d-466e-9c6c-5d874a8e7202";
 
 // 3. VSL (VIDEO SALES LETTER) EMBED
 // Wistia Media ID or direct video embed URL used on the Thank You page (#thank-you).
