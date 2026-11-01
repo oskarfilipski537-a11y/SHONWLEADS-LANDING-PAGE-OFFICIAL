@@ -313,6 +313,8 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
         } catch (e) {
           console.warn('Notice firing Lead pixel event:', e);
         }
+      } else {
+        trackEvent('Lead');
       }
     }
 

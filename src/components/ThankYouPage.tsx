@@ -1,14 +1,33 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { HeaderLogo } from './HeaderLogo.tsx';
 import { WistiaPlayer } from './WistiaPlayer.tsx';
 import { WISTIA_MEDIA_ID, VSL_EMBED_URL } from '../config.ts';
 import { CheckCircle2, Play, Mail, Video, PhoneCall, ArrowLeft, Home } from 'lucide-react';
+import { trackEvent } from '../utils/analytics.ts';
 
 interface ThankYouPageProps {
   onReturnToHome?: () => void;
 }
 
 export const ThankYouPage: React.FC<ThankYouPageProps> = ({ onReturnToHome }) => {
+  const scheduleFiredRef = useRef(false);
+
+  // Fire fbq('track', 'Schedule') once when the thank-you page loads
+  useEffect(() => {
+    if (!scheduleFiredRef.current) {
+      scheduleFiredRef.current = true;
+      if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
+        try {
+          window.fbq('track', 'Schedule');
+        } catch (err) {
+          console.warn('Notice firing Schedule pixel event:', err);
+        }
+      } else {
+        trackEvent('Schedule');
+      }
+    }
+  }, []);
+
   const handleGoHome = () => {
     if (onReturnToHome) {
       onReturnToHome();

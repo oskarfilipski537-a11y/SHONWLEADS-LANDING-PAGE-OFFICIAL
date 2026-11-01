@@ -52,14 +52,14 @@ export function initMetaPixel(): void {
 
 /**
  * Track Meta Pixel conversion events from the browser.
- * Only PageView, ViewContent, and Lead are permitted.
- * All other events (e.g. Schedule) are strictly disallowed.
+ * Only PageView, ViewContent, Lead, and Schedule are permitted.
+ * All other events are strictly disallowed.
  */
 export function trackEvent(eventName: string, payload?: Record<string, any>): void {
   if (typeof window === 'undefined') return;
 
-  // Strict check: Only PageView, ViewContent, and Lead are permitted
-  const allowedEvents = ['PageView', 'ViewContent', 'Lead'];
+  // Strict check: Only PageView, ViewContent, Lead, and Schedule are permitted
+  const allowedEvents = ['PageView', 'ViewContent', 'Lead', 'Schedule'];
   if (!allowedEvents.includes(eventName)) {
     return;
   }
