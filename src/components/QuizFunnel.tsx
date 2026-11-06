@@ -45,7 +45,10 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
   const [answers, setAnswers] = useState<QuizAnswers>(() => {
     try {
       const saved = sessionStorage.getItem(STORAGE_QUIZ_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...parsed, consent: false };
+      }
     } catch {}
     return {
       crews: '',
@@ -396,13 +399,13 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
   return (
     <div className="w-full max-w-xl mx-auto">
       {/* Quiz Container Card with Glowing Glassmorphism */}
-      <div className="relative rounded-2xl glass-panel p-5 sm:p-7 md:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.7)] border border-white/10 overflow-hidden">
+      <div className={`relative rounded-2xl glass-panel ${currentStep === 4 ? 'p-4 sm:p-6' : 'p-5 sm:p-7 md:p-8'} shadow-[0_8px_32px_rgba(0,0,0,0.7)] border border-white/10 overflow-hidden`}>
         
         {/* Subtle top card neon gold glow line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 shadow-[0_0_12px_rgba(251,191,36,0.6)] opacity-90" />
 
         {/* Header bar: Progress + Back button */}
-        <div className="flex items-center justify-between gap-4 mb-5">
+        <div className={`flex items-center justify-between gap-4 ${currentStep === 4 ? 'mb-3 sm:mb-4' : 'mb-5'}`}>
           <div className="flex items-center gap-2">
             {currentStep > 1 && (
               <button
@@ -420,14 +423,21 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-neutral-400 font-medium">
-            <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
-            <span>Guaranteed Show-Up</span>
-          </div>
+          {currentStep < 4 ? (
+            <div className="flex items-center gap-2 text-xs text-neutral-400 font-medium">
+              <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+              <span>Guaranteed Show-Up</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-xs text-neutral-400 font-medium">
+              <span className="inline-block w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+              <span>Contact Details</span>
+            </div>
+          )}
         </div>
 
         {/* Progress Bar with Neon Gold Gradient */}
-        <div className="w-full h-2 bg-neutral-900 rounded-full overflow-hidden mb-6 p-[1px] border border-white/5">
+        <div className={`w-full h-2 bg-neutral-900 rounded-full overflow-hidden ${currentStep === 4 ? 'mb-4' : 'mb-6'} p-[1px] border border-white/5`}>
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 shadow-[0_0_16px_rgba(251,191,36,0.7)]"
             initial={{ width: 0 }}
@@ -650,85 +660,88 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
                     </p>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmitLead} noValidate className="space-y-4">
-                    <div className="text-center mb-4">
-                      <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">
-                        Almost done - where should we send your booking details?
+                  <form onSubmit={handleSubmitLead} noValidate className="space-y-3 sm:space-y-3.5">
+                    <div className="text-center mb-2.5 sm:mb-3">
+                      <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                        Almost done – where should we send your booking details?
                       </h3>
-                      <p className="text-xs text-neutral-400 mt-1">
+                      <p className="text-xs text-neutral-400 mt-0.5">
                         We'll reserve your exclusive strategy call immediately.
                       </p>
                     </div>
 
-                    {/* Full Name */}
-                    <div>
-                      <label htmlFor="fullName" className="block text-xs font-semibold text-neutral-300 mb-1.5">
-                        Full Name <span className="text-amber-400">*</span>
-                      </label>
-                      <input
-                        id="fullName"
-                        type="text"
-                        value={answers.fullName}
-                        onChange={(e) => handleNameChange(e.target.value)}
-                        onBlur={() => {
-                          setTouched((t) => ({ ...t, fullName: true }));
-                          if (!answers.fullName.trim()) {
-                            setFormErrors((errs) => ({ ...errs, fullName: 'Please enter your full name' }));
-                          }
-                        }}
-                        placeholder="e.g. Marcus Vance"
-                        className={`w-full px-4 py-3 rounded-xl bg-white/[0.04] border text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-colors ${
-                          formErrors.fullName && touched.fullName
-                            ? 'border-rose-500/80 bg-rose-950/10'
-                            : 'border-white/10 hover:border-white/20'
-                        }`}
-                        autoComplete="name"
-                        required
-                      />
-                      {formErrors.fullName && touched.fullName && (
-                        <p className="flex items-center gap-1.5 text-xs text-rose-400 mt-1">
-                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                          <span>{formErrors.fullName}</span>
-                        </p>
-                      )}
-                    </div>
+                    {/* Full Name & Email in 2 columns on desktop for optimal vertical space */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                      {/* Full Name */}
+                      <div>
+                        <label htmlFor="fullName" className="block text-xs font-semibold text-neutral-300 mb-1">
+                          Full Name <span className="text-amber-400">*</span>
+                        </label>
+                        <input
+                          id="fullName"
+                          type="text"
+                          value={answers.fullName}
+                          onChange={(e) => handleNameChange(e.target.value)}
+                          onBlur={() => {
+                            setTouched((t) => ({ ...t, fullName: true }));
+                            if (!answers.fullName.trim()) {
+                              setFormErrors((errs) => ({ ...errs, fullName: 'Please enter your full name' }));
+                            }
+                          }}
+                          placeholder="e.g. Marcus Vance"
+                          className={`w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-colors ${
+                            formErrors.fullName && touched.fullName
+                              ? 'border-rose-500/80 bg-rose-950/10'
+                              : 'border-white/10 hover:border-white/20'
+                          }`}
+                          autoComplete="name"
+                          required
+                        />
+                        {formErrors.fullName && touched.fullName && (
+                          <p className="flex items-center gap-1 text-[11px] text-rose-400 mt-1">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                            <span>{formErrors.fullName}</span>
+                          </p>
+                        )}
+                      </div>
 
-                    {/* Email */}
-                    <div>
-                      <label htmlFor="email" className="block text-xs font-semibold text-neutral-300 mb-1.5">
-                        Email Address <span className="text-amber-400">*</span>
-                      </label>
-                      <input
-                        id="email"
-                        type="email"
-                        value={answers.email}
-                        onChange={(e) => handleEmailChange(e.target.value)}
-                        onBlur={() => {
-                          setTouched((t) => ({ ...t, email: true }));
-                          if (!answers.email.trim() || !isValidEmail(answers.email)) {
-                            setFormErrors((errs) => ({ ...errs, email: 'Please enter a valid email address' }));
-                          }
-                        }}
-                        placeholder="marcus@apexroofing.com"
-                        className={`w-full px-4 py-3 rounded-xl bg-white/[0.04] border text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-colors ${
-                          formErrors.email && touched.email
-                            ? 'border-rose-500/80 bg-rose-950/10'
-                            : 'border-white/10 hover:border-white/20'
-                        }`}
-                        autoComplete="email"
-                        required
-                      />
-                      {formErrors.email && touched.email && (
-                        <p className="flex items-center gap-1.5 text-xs text-rose-400 mt-1">
-                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                          <span>{formErrors.email}</span>
-                        </p>
-                      )}
+                      {/* Email */}
+                      <div>
+                        <label htmlFor="email" className="block text-xs font-semibold text-neutral-300 mb-1">
+                          Email Address <span className="text-amber-400">*</span>
+                        </label>
+                        <input
+                          id="email"
+                          type="email"
+                          value={answers.email}
+                          onChange={(e) => handleEmailChange(e.target.value)}
+                          onBlur={() => {
+                            setTouched((t) => ({ ...t, email: true }));
+                            if (!answers.email.trim() || !isValidEmail(answers.email)) {
+                              setFormErrors((errs) => ({ ...errs, email: 'Please enter a valid email address' }));
+                            }
+                          }}
+                          placeholder="marcus@apexroofing.com"
+                          className={`w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-colors ${
+                            formErrors.email && touched.email
+                              ? 'border-rose-500/80 bg-rose-950/10'
+                              : 'border-white/10 hover:border-white/20'
+                          }`}
+                          autoComplete="email"
+                          required
+                        />
+                        {formErrors.email && touched.email && (
+                          <p className="flex items-center gap-1 text-[11px] text-rose-400 mt-1">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                            <span>{formErrors.email}</span>
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Phone Number */}
                     <div>
-                      <label htmlFor="phone" className="block text-xs font-semibold text-neutral-300 mb-1.5">
+                      <label htmlFor="phone" className="block text-xs font-semibold text-neutral-300 mb-1">
                         Phone Number (US Format) <span className="text-amber-400">*</span>
                       </label>
                       <input
@@ -743,7 +756,7 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
                           }
                         }}
                         placeholder="(555) 123-4567"
-                        className={`w-full px-4 py-3 rounded-xl bg-white/[0.04] border text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-colors ${
+                        className={`w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-colors ${
                           formErrors.phone && touched.phone
                             ? 'border-rose-500/80 bg-rose-950/10'
                             : 'border-white/10 hover:border-white/20'
@@ -752,7 +765,7 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
                         required
                       />
                       {formErrors.phone && touched.phone && (
-                        <p className="flex items-center gap-1.5 text-xs text-rose-400 mt-1">
+                        <p className="flex items-center gap-1 text-[11px] text-rose-400 mt-1">
                           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                           <span>{formErrors.phone}</span>
                         </p>
@@ -760,9 +773,9 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
                     </div>
 
                     {/* Consent Checkbox (UNCHECKED BY DEFAULT) */}
-                    <div className="pt-2">
+                    <div className="pt-1">
                       <label className="flex items-start gap-3 cursor-pointer select-none group">
-                        <div className="relative flex items-center justify-center mt-0.5">
+                        <div className="relative flex items-center justify-center mt-0.5 shrink-0">
                           <input
                             type="checkbox"
                             checked={answers.consent}
@@ -774,19 +787,39 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
                             className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
                               answers.consent
                                 ? 'bg-gradient-to-r from-amber-400 to-yellow-500 border-amber-400 text-black shadow-[0_0_12px_rgba(251,191,36,0.6)] font-bold'
-                                : 'border-neutral-500 bg-white/[0.03] group-hover:border-amber-400/60'
+                                : 'border-neutral-400 bg-white/[0.04] group-hover:border-amber-400'
                             }`}
                           >
                             {answers.consent && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                           </div>
                         </div>
 
-                        <span className="text-[11px] sm:text-xs text-neutral-400 leading-relaxed">
-                          By checking this box, I consent to receive calls and text messages (including automated messages) from ShownLeads at the number provided regarding my inquiry and services. Consent is not a condition of purchase. Message and data rates may apply. Reply STOP to opt out. See our Privacy Policy and Terms.
+                        <span className="text-[14px] leading-relaxed text-neutral-100 font-normal">
+                          By checking this box, I agree to receive text messages from ShownLeads at the number provided with confirmations and reminders about my booked call. Message frequency varies (up to 5 messages per booking). Message and data rates may apply. Reply STOP to cancel or HELP for help. Consent is not a condition of purchase. See our{' '}
+                          <a
+                            href="https://www.shownleads.com/privacy-policy"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-white hover:text-amber-300 underline underline-offset-2 font-medium cursor-pointer"
+                          >
+                            Privacy Policy
+                          </a>{' '}
+                          and{' '}
+                          <a
+                            href="https://www.shownleads.com/terms-and-conditions"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-white hover:text-amber-300 underline underline-offset-2 font-medium cursor-pointer"
+                          >
+                            Terms
+                          </a>
+                          .
                         </span>
                       </label>
                       {formErrors.consent && (
-                        <p className="flex items-center gap-1.5 text-xs text-rose-400 mt-1.5 pl-8">
+                        <p className="flex items-center gap-1.5 text-xs text-rose-400 mt-1 pl-8">
                           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                           <span>{formErrors.consent}</span>
                         </p>
@@ -794,19 +827,52 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
                     </div>
 
                     {/* Submit Button */}
-                    <div className="pt-3">
+                    <div className="pt-2">
                       <button
                         type="submit"
                         disabled={!isFormValid || isSubmitting}
-                        className={`w-full py-4 px-6 rounded-xl font-black text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
+                        className={`w-full py-3.5 sm:py-4 px-6 rounded-xl font-black text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
                           isFormValid && !isSubmitting
                             ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-black font-black shadow-[0_0_28px_rgba(251,191,36,0.5)] hover:shadow-[0_0_42px_rgba(251,191,36,0.8)] hover:brightness-110 active:scale-[0.99] cursor-pointer'
                             : 'bg-white/10 text-neutral-500 border border-white/5 cursor-not-allowed opacity-60'
                         }`}
                       >
-                        <span>See If I Qualify - Book My Call</span>
+                        <span>See If I Qualify – Book My Call</span>
                         <ChevronLeft className="w-4 h-4 rotate-180 stroke-[3]" />
                       </button>
+                    </div>
+
+                    {/* Directly below the button footer */}
+                    <div className="pt-2.5 pb-1 text-center text-[13px] leading-relaxed text-neutral-300">
+                      <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+                        <a
+                          href="https://www.shownleads.com/privacy-policy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-neutral-200 hover:text-white underline underline-offset-2 transition-colors cursor-pointer"
+                        >
+                          Privacy Policy
+                        </a>
+                        <span className="text-neutral-500 select-none" aria-hidden="true">|</span>
+                        <a
+                          href="https://www.shownleads.com/terms-and-conditions"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-neutral-200 hover:text-white underline underline-offset-2 transition-colors cursor-pointer"
+                        >
+                          SMS Terms & Conditions
+                        </a>
+                        <span className="text-neutral-500 select-none" aria-hidden="true">|</span>
+                        <a
+                          href="mailto:info@shownleads.com"
+                          className="text-neutral-200 hover:text-white underline underline-offset-2 transition-colors cursor-pointer"
+                        >
+                          info@shownleads.com
+                        </a>
+                      </div>
+                      <p className="mt-1 text-neutral-400 text-[12px] sm:text-[13px]">
+                        ShownLeads, a trading name of Oskar Jan Filipski, 2 Windmill Close, Cashel, Co. Tipperary, E25 AV62, Ireland
+                      </p>
                     </div>
                   </form>
                 )}
@@ -816,21 +882,23 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
         </div>
       </div>
 
-      {/* Trust Line Under Quiz Card */}
-      <div className="mt-4 pt-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-neutral-400">
-        <div className="flex items-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0 shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
-          <span>Pay only for estimates that show up</span>
+      {/* Trust Line Under Quiz Card - only on steps 1-3 */}
+      {currentStep < 4 && (
+        <div className="mt-4 pt-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-neutral-400">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0 shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+            <span>Pay only for estimates that show up</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-amber-400 shrink-0 shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+            <span>Direct homeowner calendar bookings</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0 shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+            <span>256-bit SSL encrypted & spam-free</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5 text-amber-400 shrink-0 shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
-          <span>Direct homeowner calendar bookings</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0 shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
-          <span>256-bit SSL encrypted & spam-free</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

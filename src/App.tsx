@@ -241,7 +241,7 @@ export default function App() {
             <div
               className={
                 isLockedIn
-                  ? 'fixed inset-0 z-50 overflow-y-auto bg-black py-6 sm:py-10 px-4 flex flex-col items-center justify-start sm:justify-center'
+                  ? 'fixed inset-0 z-50 overflow-y-auto bg-black py-4 sm:py-6 px-4 flex flex-col items-center justify-start sm:justify-center'
                   : 'w-full'
               }
               role={isLockedIn ? 'dialog' : undefined}
@@ -249,7 +249,7 @@ export default function App() {
               aria-label={isLockedIn ? 'Contractor Qualification Assessment' : undefined}
             >
               {isLockedIn && (
-                <div className="mb-4 text-center">
+                <div className="mb-2 sm:mb-3 text-center">
                   <HeaderLogo compact />
                 </div>
               )}
