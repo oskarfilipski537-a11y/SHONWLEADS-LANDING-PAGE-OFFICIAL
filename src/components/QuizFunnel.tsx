@@ -312,8 +312,8 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
       }
     } catch {}
 
-    // Fire fbq('track', 'Lead') once ONLY if qualified is "yes" (do NOT fire if qualified is "no")
-    if (qualifiedStatus === 'yes' && !leadFiredRef.current) {
+    // Trigger the standard Meta Lead event on successful form submission (not on ordinary page visits)
+    if (!leadFiredRef.current) {
       leadFiredRef.current = true;
       if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
         try {
