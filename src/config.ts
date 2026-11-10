@@ -23,7 +23,7 @@ export const VSL_EMBED_URL: string = "https://fast.wistia.net/embed/iframe/hi3zc
 export const BOOKING_IFRAME_ID: string = "nmro7qzY0OkqtUmR4MJD";
 
 // 5. META PIXEL ID
-export const META_PIXEL_ID: string = "1118646400757171";
+export const META_PIXEL_ID: string = "2050359622285793";
 
 // 6. COMPANY INFORMATION & LEGAL
 export const COMPANY_NAME: string = "ShownLeads";
