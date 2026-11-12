@@ -95,7 +95,7 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
     } catch {}
   }, [currentStep, isLockedIn]);
 
-  // Handle Lock-In: disable escape key, handle beforeunload, and trap back button
+  // Handle Lock-In: disable escape key and trap back button
   useEffect(() => {
     if (!isLockedIn) return;
 
@@ -107,13 +107,6 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
       if (e.key === 'Escape') {
         e.preventDefault();
       }
-    };
-
-    // Beforeunload confirmation warning
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = 'You have unsaved progress in your estimate qualification. Are you sure you want to leave?';
-      return e.returnValue;
     };
 
     // Push initial history state for lock-in if not present
@@ -132,14 +125,12 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('popstate', handlePopState);
 
     return () => {
       document.body.style.overflow = 'auto';
       document.documentElement.style.overflow = 'auto';
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('popstate', handlePopState);
     };
   }, [isLockedIn, currentStep, setCurrentStep]);

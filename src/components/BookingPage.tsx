@@ -136,18 +136,10 @@ export const BookingPage: React.FC<BookingPageProps> = ({ onBookingConfirmed, le
       window.history.pushState({ page: 'book' }, '');
     };
 
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = 'Your calendar slot is being held. Are you sure you want to leave?';
-      return e.returnValue;
-    };
-
     window.addEventListener('popstate', handlePopState);
-    window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
 
