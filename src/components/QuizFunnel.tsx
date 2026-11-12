@@ -374,7 +374,7 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
 
     const minDelayPromise = new Promise((resolve) => setTimeout(resolve, 1400));
 
-    // Guarantee the contact is sent and created in GHL BEFORE navigating to calendar
+    // Ensure the contact is sent and created in GHL BEFORE navigating to calendar
     await Promise.all([webhookPromise, minDelayPromise]);
 
     document.body.style.overflow = 'auto';
@@ -528,7 +528,7 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
                   How many extra estimates could you handle per month?
                 </h3>
                 <p className="text-xs sm:text-sm text-neutral-400 text-center mb-5">
-                  Estimate appointments where the homeowner is guaranteed to show.
+                  Estimate appointments where you only pay when the homeowner shows.
                 </p>
 
                 <div className="flex flex-col gap-2.5">

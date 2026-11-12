@@ -141,7 +141,7 @@ export default function App() {
     }
   };
 
-  // Return from Thank You page back to main page - guaranteed reset to step 1
+  // Return from Thank You page back to main page - reset to step 1
   const handleReturnToHome = () => {
     setIsLockedIn(false);
     setCurrentStep(1);
