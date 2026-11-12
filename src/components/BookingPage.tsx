@@ -25,6 +25,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ onBookingConfirmed, le
         crews: leadAnswers.crews || '',
         extraEstimates: leadAnswers.extraEstimates || '',
         monthlyRevenue: leadAnswers.monthlyRevenue || '',
+        consent: Boolean(leadAnswers.consent),
       };
     }
     try {
@@ -38,6 +39,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ onBookingConfirmed, le
           crews: parsed.crews || '',
           extraEstimates: parsed.extra_estimates || '',
           monthlyRevenue: parsed.monthly_revenue || '',
+          consent: Boolean(parsed.consent),
         };
       }
       const quiz = sessionStorage.getItem('shownleads_quiz_data');
@@ -50,10 +52,11 @@ export const BookingPage: React.FC<BookingPageProps> = ({ onBookingConfirmed, le
           crews: q.crews || '',
           extraEstimates: q.extraEstimates || '',
           monthlyRevenue: q.monthlyRevenue || '',
+          consent: Boolean(q.consent),
         };
       }
     } catch {}
-    return { fullName: '', email: '', phone: '', crews: '', extraEstimates: '', monthlyRevenue: '' };
+    return { fullName: '', email: '', phone: '', crews: '', extraEstimates: '', monthlyRevenue: '', consent: false };
   })();
 
   const { firstName, lastName } = splitFullName(leadData.fullName);
@@ -101,6 +104,14 @@ export const BookingPage: React.FC<BookingPageProps> = ({ onBookingConfirmed, le
   }
   if (leadData.monthlyRevenue) {
     queryParams.set('monthly_revenue', leadData.monthlyRevenue);
+  }
+  if (typeof leadData.consent === 'boolean') {
+    queryParams.set('sms_consent', leadData.consent ? 'yes' : 'no');
+    queryParams.set('consent', leadData.consent ? 'true' : 'false');
+    if (leadData.consent) {
+      queryParams.set('tag', 'sms-consent');
+      queryParams.set('tags', 'sms-consent');
+    }
   }
 
   const queryString = queryParams.toString();
@@ -218,14 +229,14 @@ export const BookingPage: React.FC<BookingPageProps> = ({ onBookingConfirmed, le
           You Qualify - Pick A Time For Your Strategy Call
         </h1>
         <p className="text-sm sm:text-base text-neutral-400 mt-2.5 max-w-lg mx-auto leading-relaxed">
-          Select an available time below to review homeowner demand in your service area and set up your show-up guaranteed calendar.
+          Select an available time below for your free strategy call. We'll review homeowner demand in your service area and how pay-per-shown-estimate would work for you.
         </p>
 
         {/* Benefits reminder */}
         <div className="flex flex-wrap items-center justify-center gap-4 mt-4 text-xs text-neutral-400">
           <div className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-amber-400" />
-            <span>15-min call</span>
+            <span>30-min call</span>
           </div>
           <span>·</span>
           <div className="flex items-center gap-1.5">

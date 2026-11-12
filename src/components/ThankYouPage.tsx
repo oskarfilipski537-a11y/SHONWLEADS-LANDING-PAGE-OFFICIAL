@@ -126,11 +126,11 @@ export const ThankYouPage: React.FC<ThankYouPageProps> = ({ onReturnToHome }) =>
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                <span>Check your email and SMS for confirmation</span>
+                <span>Check your email for confirmation</span>
                 <Mail className="w-4 h-4 text-amber-400" />
               </h3>
               <p className="text-xs sm:text-sm text-neutral-400 mt-1 leading-relaxed">
-                We've sent calendar invite details and dial-in instructions to your inbox and phone number.
+                We've sent your calendar invite and call details to your email. If you agreed to text messages, you'll also receive a confirmation text.
               </p>
             </div>
           </div>

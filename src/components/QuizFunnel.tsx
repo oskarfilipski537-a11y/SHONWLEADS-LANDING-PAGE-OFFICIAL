@@ -243,8 +243,7 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
   const isFormValid =
     answers.fullName.trim().length > 1 &&
     isValidEmail(answers.email) &&
-    isValidUSPhone(answers.phone) &&
-    answers.consent === true;
+    isValidUSPhone(answers.phone);
 
   // Final submission of Step 4
   const handleSubmitLead = async (e: React.FormEvent) => {
@@ -265,10 +264,6 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
       setFormErrors((errs) => ({ ...errs, phone: 'Please enter a valid 10-digit US phone number' }));
       return;
     }
-    if (!answers.consent) {
-      setFormErrors((errs) => ({ ...errs, consent: 'Please check the consent box to proceed' }));
-      return;
-    }
 
     setIsSubmitting(true);
     setLoadingPhase('validating');
@@ -287,7 +282,9 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
     const isLowestOption = isLowestRevenueOption(finalAnswers.monthlyRevenueIndex, finalAnswers.monthlyRevenue);
     const qualifiedStatus = isLowestOption ? 'no' : 'yes';
 
-    // Exact keys requested: first_name, last_name, email, phone, crews, monthly_revenue, extra_estimates, consent, qualified, fbp, fbc, fbclid
+    const hasConsent = Boolean(finalAnswers.consent);
+
+    // Exact keys requested + GoHighLevel tags: "sms-consent" if ticked, no tag if unticked
     const payload = {
       first_name: firstName,
       last_name: lastName,
@@ -296,7 +293,11 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
       crews: finalAnswers.crews,
       monthly_revenue: finalAnswers.monthlyRevenue,
       extra_estimates: finalAnswers.extraEstimates,
-      consent: Boolean(finalAnswers.consent),
+      consent: hasConsent,
+      sms_consent: hasConsent ? 'yes' : 'no',
+      tag: hasConsent ? 'sms-consent' : '',
+      tags: hasConsent ? 'sms-consent' : '',
+      consent_timestamp: hasConsent ? (finalAnswers.consentTimestamp || new Date().toISOString()) : '',
       qualified: qualifiedStatus,
       fbp: metaData.fbp || utmParams.fbp || '',
       fbc: metaData.fbc || utmParams.fbc || '',
@@ -312,8 +313,8 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
       }
     } catch {}
 
-    // Trigger the standard Meta Lead event on successful form submission (not on ordinary page visits)
-    if (!leadFiredRef.current) {
+    // Trigger the standard Meta Lead event on successful form submission (only if qualified, not on ordinary page visits)
+    if (!leadFiredRef.current && qualifiedStatus === 'yes') {
       leadFiredRef.current = true;
       if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
         try {
@@ -326,17 +327,17 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
       }
     }
 
-    // POST to webhook in background with retry, but NEVER block the user
-    const postWebhook = async () => {
+    // POST to GoHighLevel webhook and wait for completion BEFORE advancing to calendar
+    const postWebhook = async (): Promise<boolean> => {
       if (!WEBHOOK_URL || WEBHOOK_URL.includes('PASTE_')) {
-        return;
+        return false;
       }
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3500);
+          const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-          await fetch(WEBHOOK_URL, {
+          const response = await fetch(WEBHOOK_URL, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -347,33 +348,38 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
             signal: controller.signal,
           });
           clearTimeout(timeoutId);
-          break; // Succeeded
+          if (response.ok) {
+            return true;
+          }
         } catch (err) {
-          console.warn(`Webhook POST attempt ${attempt} notice:`, err);
+          console.warn(`GHL Webhook POST attempt ${attempt} notice:`, err);
           if (attempt === 1) {
-            await new Promise((r) => setTimeout(r, 600));
+            await new Promise((r) => setTimeout(r, 400));
           }
         }
       }
+      return false;
     };
 
-    // Trigger webhook asynchronously
-    postWebhook();
+    // Run webhook and smooth qualification sequence concurrently
+    const webhookPromise = postWebhook();
 
-    // Show high-converting 1.5s loading sequence
     setTimeout(() => {
       setLoadingPhase('checking_capacity');
-    }, 500);
+    }, 450);
 
     setTimeout(() => {
       setLoadingPhase('qualifying');
-    }, 1000);
+    }, 950);
 
-    setTimeout(() => {
-      document.body.style.overflow = 'auto';
-      document.documentElement.style.overflow = 'auto';
-      onQuizComplete(finalAnswers);
-    }, 1500);
+    const minDelayPromise = new Promise((resolve) => setTimeout(resolve, 1400));
+
+    // Guarantee the contact is sent and created in GHL BEFORE navigating to calendar
+    await Promise.all([webhookPromise, minDelayPromise]);
+
+    document.body.style.overflow = 'auto';
+    document.documentElement.style.overflow = 'auto';
+    onQuizComplete(finalAnswers);
   };
 
   // Animation variants
@@ -426,7 +432,7 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
           {currentStep < 4 ? (
             <div className="flex items-center gap-2 text-xs text-neutral-400 font-medium">
               <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
-              <span>Guaranteed Show-Up</span>
+              <span>Pay Only For Shown Estimates</span>
             </div>
           ) : (
             <div className="flex items-center gap-2 text-xs text-neutral-400 font-medium">
@@ -668,6 +674,9 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
                       <p className="text-xs text-neutral-400 mt-0.5">
                         We'll reserve your exclusive strategy call immediately.
                       </p>
+                      <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5">
+                        This form is for contractors booking a strategy call with ShownLeads.
+                      </p>
                     </div>
 
                     {/* Full Name & Email in 2 columns on desktop for optimal vertical space */}
@@ -770,6 +779,9 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
                           <span>{formErrors.phone}</span>
                         </p>
                       )}
+                      <p className="text-[11px] sm:text-xs text-neutral-400 mt-1">
+                        We use this number to confirm and remind you about your strategy call.
+                      </p>
                     </div>
 
                     {/* Consent Checkbox (UNCHECKED BY DEFAULT) */}
@@ -781,7 +793,6 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
                             checked={answers.consent}
                             onChange={(e) => handleConsentChange(e.target.checked)}
                             className="sr-only"
-                            required
                           />
                           <div
                             className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${

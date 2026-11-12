@@ -8,7 +8,6 @@ import { BackgroundGlow } from './components/BackgroundGlow.tsx';
 import { HeaderLogo } from './components/HeaderLogo.tsx';
 import { QuizFunnel } from './components/QuizFunnel.tsx';
 import { ReviewsSection } from './components/ReviewsSection.tsx';
-import { ScreenshotGallery } from './components/ScreenshotGallery.tsx';
 import { Footer } from './components/Footer.tsx';
 import { BookingPage } from './components/BookingPage.tsx';
 import { ThankYouPage } from './components/ThankYouPage.tsx';
@@ -93,7 +92,7 @@ export default function App() {
           extraEstimates: parsed.extra_estimates || '',
           monthlyRevenue: parsed.monthly_revenue || '',
           monthlyRevenueIndex: !isNaN(parsedIndex as number) ? parsedIndex : undefined,
-          consent: true,
+          consent: Boolean(parsed.consent),
           consentTimestamp: parsed.consent_timestamp || '',
         };
       }
@@ -233,7 +232,7 @@ export default function App() {
 
           {/* H2: Centered, smaller, muted */}
           <h2 className="text-xs sm:text-sm md:text-base text-neutral-300 max-w-2xl mx-auto leading-relaxed mb-6 sm:mb-8 font-normal">
-            ShownLeads sends qualified homeowners straight to your calendar. If they don't show, you don't pay. Answer 3 quick questions to see if you qualify.
+            ShownLeads books qualified homeowner estimates onto your calendar. If they don't show, you don't pay. Answer 3 quick questions to see if you qualify for a strategy call.
           </h2>
 
           {/* 4. Single Persistent Quiz Funnel (seamless transition without unmount) */}
@@ -264,13 +263,10 @@ export default function App() {
           </div>
         </section>
 
-        {/* 5. Reviews Section */}
+        {/* 5. Trust Metrics Bar & Repeat CTA */}
         <ReviewsSection onCtaClick={scrollToQuiz} />
 
-        {/* 6. WhatsApp Chat Screenshots Gallery & 7. Repeat CTA */}
-        <ScreenshotGallery onCtaClick={scrollToQuiz} />
-
-        {/* 8. Minimal Footer */}
+        {/* 6. Minimal Footer */}
         <Footer />
       </div>
     </div>

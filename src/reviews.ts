@@ -15,8 +15,8 @@ export const STAT_BAR_METRICS: StatItem[] = [
   {
     id: "stat-2",
     value: "100%",
-    label: "Show-Up Guarantee",
-    subtext: "Only pay when the homeowner meets your estimator"
+    label: "Pay Only When They Show",
+    subtext: "You're billed only when the homeowner meets your estimator."
   },
   {
     id: "stat-3",
