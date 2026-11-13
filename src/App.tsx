@@ -85,7 +85,7 @@ export default function App() {
         const storedIndex = sessionStorage.getItem('shownleads_revenue_index');
         const parsedIndex = storedIndex !== null ? parseInt(storedIndex, 10) : undefined;
         return {
-          fullName: parsed.full_name || '',
+          fullName: parsed.full_name || [parsed.first_name, parsed.last_name].filter(Boolean).join(' '),
           email: parsed.email || '',
           phone: parsed.phone || '',
           crews: parsed.crews || '',

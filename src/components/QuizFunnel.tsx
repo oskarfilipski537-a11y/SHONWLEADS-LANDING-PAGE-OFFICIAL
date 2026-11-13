@@ -277,6 +277,7 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
 
     // Exact keys requested + GoHighLevel tags: "sms-consent" if ticked, no tag if unticked
     const payload = {
+      full_name: finalAnswers.fullName.trim(),
       first_name: firstName,
       last_name: lastName,
       email: finalAnswers.email.trim(),
@@ -318,7 +319,52 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
       }
     }
 
-    // POST to GoHighLevel webhook and wait for completion BEFORE advancing to calendar
+    // 1. Create or update contact directly in GoHighLevel via server-side API route BEFORE calendar loads
+    const syncContactToGhl = async (): Promise<boolean> => {
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+          const response = await fetch('/api/ghl-contact', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            body: JSON.stringify({
+              fullName: finalAnswers.fullName.trim(),
+              firstName,
+              lastName,
+              email: finalAnswers.email.trim(),
+              phone: finalAnswers.phone.trim(),
+              consent: hasConsent,
+            }),
+            keepalive: true,
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+
+          if (response.ok) {
+            return true;
+          }
+          const errData = await response.json().catch(() => ({}));
+          console.warn(`GHL API sync attempt ${attempt} notice:`, response.status, errData);
+          if (response.status >= 400 && response.status < 500) {
+            // Do not retry client/validation errors
+            return false;
+          }
+        } catch (err) {
+          console.warn(`GHL API sync attempt ${attempt} notice:`, err);
+        }
+        if (attempt === 1) {
+          await new Promise((r) => setTimeout(r, 400));
+        }
+      }
+      return false;
+    };
+
+    // 2. Also POST full quiz payload to GoHighLevel webhook if configured
     const postWebhook = async (): Promise<boolean> => {
       if (!WEBHOOK_URL || WEBHOOK_URL.includes('PASTE_')) {
         return false;
@@ -352,7 +398,8 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
       return false;
     };
 
-    // Run webhook and smooth qualification sequence concurrently
+    // Run GHL contact creation, webhook, and smooth qualification sequence concurrently
+    const ghlApiPromise = syncContactToGhl();
     const webhookPromise = postWebhook();
 
     setTimeout(() => {
@@ -365,8 +412,8 @@ export const QuizFunnel: React.FC<QuizFunnelProps> = ({
 
     const minDelayPromise = new Promise((resolve) => setTimeout(resolve, 1400));
 
-    // Ensure the contact is sent and created in GHL BEFORE navigating to calendar
-    await Promise.all([webhookPromise, minDelayPromise]);
+    // Ensure the contact is created/updated in GHL BEFORE navigating to calendar
+    await Promise.all([ghlApiPromise, webhookPromise, minDelayPromise]);
 
     document.body.style.overflow = 'auto';
     document.documentElement.style.overflow = 'auto';

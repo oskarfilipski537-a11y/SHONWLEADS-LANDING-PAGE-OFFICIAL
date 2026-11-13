@@ -87,12 +87,11 @@ export const BookingPage: React.FC<BookingPageProps> = ({ onBookingConfirmed, le
     queryParams.set('email', leadData.email);
   }
 
-  // Phone aliases
+  // Phone aliases (GHL booking widget expects E.164 format e.g. +1XXXXXXXXXX)
   if (leadData.phone) {
-    queryParams.set('phone', leadData.phone);
-    if (e164Phone) {
-      queryParams.set('phone_number', e164Phone);
-    }
+    const prefillPhone = e164Phone || leadData.phone;
+    queryParams.set('phone', prefillPhone);
+    queryParams.set('phone_number', prefillPhone);
   }
 
   // Qualification survey context
