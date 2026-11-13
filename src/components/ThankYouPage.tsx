@@ -28,12 +28,17 @@ export const ThankYouPage: React.FC<ThankYouPageProps> = ({ onReturnToHome }) =>
     }
   }, []);
 
-  const handleGoHome = () => {
+  const handleClearQuizSession = () => {
+    try {
+      sessionStorage.setItem('shownleads_is_locked_in', 'false');
+      sessionStorage.setItem('shownleads_quiz_step', '1');
+      sessionStorage.removeItem('shownleads_quiz_data');
+      sessionStorage.removeItem('shownleads_final_lead');
+      sessionStorage.removeItem('shownleads_qualified');
+      sessionStorage.removeItem('shownleads_revenue_index');
+    } catch {}
     if (onReturnToHome) {
       onReturnToHome();
-    } else {
-      window.location.hash = '';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -44,14 +49,14 @@ export const ThankYouPage: React.FC<ThankYouPageProps> = ({ onReturnToHome }) =>
     <div className="min-h-screen w-full relative z-10 flex flex-col items-center justify-start px-4 py-6 md:py-10">
       {/* Brand Header & Top Return Action */}
       <div className="w-full max-w-4xl mx-auto flex items-center justify-between gap-4">
-        <button
-          type="button"
-          onClick={handleGoHome}
+        <a
+          href="/"
+          onClick={handleClearQuizSession}
           className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-neutral-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Main Page</span>
-        </button>
+        </a>
 
         <HeaderLogo compact />
 
@@ -170,14 +175,14 @@ export const ThankYouPage: React.FC<ThankYouPageProps> = ({ onReturnToHome }) =>
 
         {/* Option to return to main page */}
         <div className="mt-8 pt-6 border-t border-white/10 text-center">
-          <button
-            type="button"
-            onClick={handleGoHome}
+          <a
+            href="/"
+            onClick={handleClearQuizSession}
             className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-amber-400/50 text-sm font-semibold text-white hover:text-amber-300 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_20px_rgba(251,191,36,0.2)]"
           >
             <Home className="w-4 h-4" />
             <span>Return to Main Page</span>
-          </button>
+          </a>
           <p className="text-[11px] text-neutral-500 mt-2">
             You can review customer testimonials, contractor inbox proofs, and service details anytime.
           </p>
